@@ -33,7 +33,7 @@ def errosion(image):
             erroded_image[i][j] = min(n)
     return numpy.asarray(erroded_image)
 
-def dilatation(image):
+def dilation(image):
     rows, cols = image.shape
     erroded_image = image.copy()
     gamma4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
@@ -47,7 +47,7 @@ def dilatation(image):
 
 def morphological_gradient(image):
     erroded = errosion(image)
-    dilated = dilatation(image)
+    dilated = dilation(image)
     return dilated - erroded
 
 def visit_neighbors(image, origin, neighbors, default):

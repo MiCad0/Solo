@@ -6,6 +6,8 @@ import threading
 
 ERROSION = 0
 DILATION = 1
+GAMMA4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
+GAMMA8 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
 
 async def main():
     # Load an image
@@ -30,24 +32,20 @@ async def main():
 async def errosion(image):
     rows, cols = image.shape
     erroded_image = image.copy()
-    gamma4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
-    gamma8 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
 
     for i in range(rows):
         for j in range(cols):
-            n = visit_neighbors(image, [i,j], gamma4, ERROSION)
+            n = visit_neighbors(image, [i,j], GAMMA4, ERROSION)
             erroded_image[i][j] = min(n)
     return numpy.asarray(erroded_image)
 
 async def dilation(image):
     rows, cols = image.shape
     erroded_image = image.copy()
-    gamma4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
-    gamma8 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
 
     for i in range(rows):
         for j in range(cols):
-            n = visit_neighbors(image, [i,j], -gamma4, DILATION)
+            n = visit_neighbors(image, [i,j], -GAMMA4, DILATION)
             erroded_image[i][j] = max(n)
     return numpy.asarray(erroded_image)
 

@@ -1,4 +1,3 @@
-import asyncio
 import time
 import cv2
 import numpy
@@ -8,7 +7,7 @@ DILATION = 1
 GAMMA4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
 GAMMA8 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
 
-async def main():
+def main():
     # Load an image
     image = cv2.imread('house.png')
     cv2.imshow('Image', image)
@@ -20,7 +19,7 @@ async def main():
     cv2.waitKey(0)
 
     print(f"started at {time.strftime('%X')}")
-    gradient_image = await morphological_gradient(gray_image)
+    gradient_image = morphological_gradient(gray_image)
     print(f"finished at {time.strftime('%X')}")
     cv2.imshow('Gradient Image', gradient_image)
     # gradient_image2 = morphological_gradient(gradient_image)          # Less sharp image
@@ -28,39 +27,43 @@ async def main():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-async def erosion(image,neighbors):
-    rows, cols = image.shape
-    erroded_image = image.copy()
+def erosion(image,neighbors):
+    print("starting erosion")
+    (rows, cols) = image.shape
+    eroded_image = numpy.empty_like(image)
 
     for i in range(rows):
         for j in range(cols):
             n = visit_neighbors(image, [i,j], neighbors, ERROSION)
-            erroded_image[i][j] = min(n)
-    return numpy.asarray(erroded_image)
+            eroded_image[i][j] = min(n)
+    print("ending erosion")
+    return eroded_image
 
-async def dilation(image,neighbors):
+def dilation(image,neighbors):
+    print("starting dilation")
     rows, cols = image.shape
-    erroded_image = image.copy()
+    dilated_image = numpy.empty_like(image)
 
     for i in range(rows):
         for j in range(cols):
             n = visit_neighbors(image, [i,j], -neighbors, DILATION)
-            erroded_image[i][j] = max(n)
-    return numpy.asarray(erroded_image)
+            dilated_image[i][j] = max(n)
+    print("ending dilation")
+    return dilated_image
 
-async def morphological_gradient(image):
-    erroded = asyncio.create_task(erosion(image,GAMMA4))
-    dilated = asyncio.create_task(dilation(image,GAMMA4))
-    return await dilated - await erroded
+def morphological_gradient(image):
+    erroded = erosion(image,GAMMA4)
+    dilated = dilation(image,GAMMA4)
+    return dilated - erroded
 
 def visit_neighbors(image, origin, neighbors, default):
-    res = set()
+    res = []
     for n in neighbors:
         i,j = [a + b for a, b in zip(origin, n)]
-        if (i<0 or j<0 or i>=image.shape[0] or j>=image.shape[1]): res.add(default==DILATION)
-        else: res.add(image[i][j])
+        if (i<0 or j<0 or i>=image.shape[0] or j>=image.shape[1]): res.append(default==DILATION)
+        elif image[i][j] not in res: res.append(image[i][j])
     return res
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

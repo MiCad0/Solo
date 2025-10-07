@@ -8,7 +8,7 @@ DILATION = 1
 GAMMA4 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1]])
 GAMMA8 = numpy.array([[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
 
-async def main():
+def main():
     # Load an image
     image = cv2.imread('house.png')
     cv2.imshow('Image', image)
@@ -20,7 +20,7 @@ async def main():
     cv2.waitKey(0)
 
     print(f"started at {time.strftime('%X')}")
-    gradient_image = await morphological_gradient(gray_image)
+    gradient_image = morphological_gradient(gray_image)
     print(f"finished at {time.strftime('%X')}")
     cv2.imshow('Gradient Image', gradient_image)
     # gradient_image2 = morphological_gradient(gradient_image)          # Less sharp image
@@ -28,30 +28,24 @@ async def main():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-async def errosion(image):
-    rows, cols = image.shape
-    erroded_image = image.copy()
+def get_line(coords, index):
+    rows = []
+    for e in coords:
+        elem = filter(lambda a: a[index] == e[index], coords)
+        if elem not in rows: rows.append(elem)
+    return e
 
-    for i in range(rows):
-        for j in range(cols):
-            n = visit_neighbors(image, [i,j], GAMMA4, ERROSION)
-            erroded_image[i][j] = min(n)
-    return numpy.asarray(erroded_image)
-
-async def dilation(image):
-    rows, cols = image.shape
-    erroded_image = image.copy()
-
-    for i in range(rows):
-        for j in range(cols):
-            n = visit_neighbors(image, [i,j], -GAMMA4, DILATION)
-            erroded_image[i][j] = max(n)
-    return numpy.asarray(erroded_image)
-
-async def morphological_gradient(image):
-    erroded = asyncio.create_task(errosion(image))
-    dilated = asyncio.create_task(dilation(image))
-    return await dilated - await erroded
+def morphological_gradient(image):
+    # To parrallelize we need to get a list of coords for each row
+    # rows = get_line(GAMMA4,0)
+    # cols = get_line(GAMMA4,1)
+    eroded, dilated = numpy.zeros(image.shape),numpy.zeros(image.shape)
+    print(eroded.shape)
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            eroded[i][j] = min(visit_neighbors(image, [i,j], GAMMA4, ERROSION))
+            dilated[i][j] = max(visit_neighbors(image, [i,j], -GAMMA4, DILATION))
+    return dilated-eroded
 
 def visit_neighbors(image, origin, neighbors, default):
     res = set()
@@ -61,6 +55,5 @@ def visit_neighbors(image, origin, neighbors, default):
         else: res.add(image[i][j])
     return res
 
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
